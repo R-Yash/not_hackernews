@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
-from typing import List
+from typing import List, Optional, Literal
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -10,17 +10,42 @@ from routers.auth import get_current_user
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
 @router.get("/", response_model=List[PostSchema])
-async def list_posts(skip: int = Query(0, ge=0),limit: int = Query(10, gt=0),db: Session = Depends(get_db)):
+async def list_posts(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, gt=0),
+    sort: Literal["new", "top"] = Query("new", description="‘new’ → newest first; ‘top’ → highest votes first"),
+    search: Optional[str] = Query(None, description="search term to match in post titles"),
+    db: Session = Depends(get_db)
+):
+    """
+    - **skip**, **limit**: pagination  
+    - **sort**: "new"  ⇒ order by creation id descending  
+               "top"  ⇒ order by points descending  
+    - **search**: filter titles ILIKE %search%
+    """
+    q = db.query(PostDB)
+
+    if search:
+        q = q.filter(PostDB.title.ilike(f"%{search}%"))
+
+    if sort == "new":
+        q = q.order_by(PostDB.id.desc())
+    else: 
+        q = q.order_by(PostDB.points.desc())
+
+    posts = q.offset(skip).limit(limit).all()
+
     counts = dict(
         db.query(CommentDB.post_id, func.count(CommentDB.id))
           .group_by(CommentDB.post_id)
           .all()
     )
-    posts = db.query(PostDB).offset(skip).limit(limit).all()
+
     result = []
     for p in posts:
         pc = counts.get(p.id, 0)
         result.append(PostSchema.from_orm(p).copy(update={"comment_count": pc}))
+
     return result
 
 @router.post("/", response_model=PostSchema, status_code=201)

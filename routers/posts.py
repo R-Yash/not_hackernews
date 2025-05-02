@@ -9,25 +9,6 @@ from routers.auth import get_current_user
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
-# posts: List[Post] = []
-# next_post_id: int = 1
-# votes: dict[Tuple[str, int], int] = {}
-
-# def _update_comment_counts() -> dict[int, int]:
-#     """
-#     Build a mapping from post_id -> count of comments (including replies).
-#     """
-#     counts: dict[int, int] = {}
-#     for c in _comments:
-#         counts[c["post_id"]] = counts.get(c["post_id"], 0) + 1
-#     return counts
-
-
-# def total_posts() -> int:
-#     """Return total number of posts."""
-#     return len(posts)
-
-
 @router.get("/", response_model=List[PostSchema])
 async def list_posts(skip: int = Query(0, ge=0),limit: int = Query(10, gt=0),db: Session = Depends(get_db)):
     counts = dict(

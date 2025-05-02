@@ -8,9 +8,6 @@ from routers.auth import get_current_user
 
 router = APIRouter(prefix="/comments", tags=["Comments"])
 
-_comments: List[Dict] = []
-_next_comment_id = 1
-
 def _build_tree(flat_comments: List[Dict]) -> List[CommentSchema]:
     comment_map = {c["id"]: {**c, "children": []} for c in flat_comments}
     roots = []

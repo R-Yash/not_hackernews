@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from db import Base, engine
-from auth import router as auth_router
-from posts import router as posts_router
-from comments import router as comments_router
+from routers.auth import router as auth_router
+from routers.posts import router as posts_router
+from routers.comments import router as comments_router
 
 Base.metadata.create_all(bind=engine)
 

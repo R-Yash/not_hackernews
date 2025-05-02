@@ -5,7 +5,7 @@ from sqlalchemy import func
 
 from db import get_db
 from models import Post as PostSchema, PostCreate, PostDB, CommentDB, Vote
-from auth import get_current_user
+from routers.auth import get_current_user
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 

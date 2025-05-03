@@ -64,3 +64,7 @@ More Information is available in `api.md`
 ## AI Tools that helped me
 - ChatGPT -> I used ChatGPT for fixing bugs in my code. It also helped my write API documentation and docstrings for functions
 - Github Copilot -> Copilot helped me optimize my code and make it more efficient.
+
+## Screenshots
+![image](https://github.com/user-attachments/assets/bee0412c-36d1-4d6d-aeeb-a1ff6d7f8b26)
+![image](https://github.com/user-attachments/assets/2646016c-a8cf-4639-8821-741b79e5d226)

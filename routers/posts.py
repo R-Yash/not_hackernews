@@ -18,10 +18,17 @@ async def list_posts(
     db: Session = Depends(get_db)
 ):
     """
-    - **skip**, **limit**: pagination  
-    - **sort**: "new"  ⇒ order by creation id descending  
-               "top"  ⇒ order by points descending  
-    - **search**: filter titles ILIKE %search%
+    Lists posts with pagination, sorting, and title search.
+
+    Args:
+        skip: Number of posts to skip (for pagination).
+        limit: Maximum number of posts to return.
+        sort: Sorting criteria ('new' by creation time or 'top' by points).
+        search: Optional search term to filter posts by title.
+        db: The database session dependency.
+
+    Returns:
+        A list of PostSchema objects matching the criteria.
     """
     q = db.query(PostDB)
 
@@ -50,6 +57,17 @@ async def list_posts(
 
 @router.post("/", response_model=PostSchema, status_code=201)
 async def create_post(post_in: PostCreate, current_user: str = Depends(get_current_user),db: Session = Depends(get_db)):
+    """
+    Creates a new post authored by the current authenticated user.
+
+    Args:
+        post_in: The data for the new post (title, url, text). Author is ignored.
+        current_user: The username of the authenticated user.
+        db: The database session dependency.
+
+    Returns:
+        The newly created PostSchema object.
+    """
     post = PostDB(
         title=post_in.title,
         url=post_in.url,
@@ -64,6 +82,22 @@ async def create_post(post_in: PostCreate, current_user: str = Depends(get_curre
 
 @router.post("/{post_id}/vote", response_model=PostSchema)
 async def vote_post(post_id: int,vote: int = Query(..., ge=-1, le=1),current_user: str = Depends(get_current_user),db: Session = Depends(get_db)):
+    """
+    Casts or updates a vote on a specific post by the current user.
+
+    Args:
+        post_id: The ID of the post to vote on.
+        vote: The vote value (1, -1, or 0).
+        current_user: The username of the authenticated user.
+        db: The database session dependency.
+
+    Raises:
+        HTTPException: 404 Not Found if the post does not exist.
+        HTTPException: 400 Bad Request if the user tries to cast the same vote value again.
+
+    Returns:
+        The updated PostSchema object with the new point total and comment count.
+    """
     post = db.query(PostDB).filter(PostDB.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -85,6 +119,19 @@ async def vote_post(post_id: int,vote: int = Query(..., ge=-1, le=1),current_use
 
 @router.get("/{post_id}", response_model=PostSchema)
 async def get_post(post_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieves a single post by its ID, including its comment count.
+
+    Args:
+        post_id: The ID of the post to retrieve.
+        db: The database session dependency.
+
+    Raises:
+        HTTPException: 404 Not Found if the post does not exist.
+
+    Returns:
+        The PostSchema object for the requested post.
+    """
     post = db.query(PostDB).filter(PostDB.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")

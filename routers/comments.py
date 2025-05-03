@@ -9,6 +9,17 @@ from routers.auth import get_current_user
 router = APIRouter(prefix="/comments", tags=["Comments"])
 
 def _build_tree(flat_comments: List[Dict]) -> List[CommentSchema]:
+    """
+    Builds a nested tree structure from a flat list of comment dictionaries.
+
+    Args:
+        flat_comments: A list of dictionaries, each representing a comment
+                       with 'id', 'parent_id', 'text', 'author', 'post_id'.
+
+    Returns:
+        A list of CommentSchema objects representing the root comments,
+        with their children nested appropriately.
+    """
     comment_map = {c["id"]: {**c, "children": []} for c in flat_comments}
     roots = []
     for c in comment_map.values():
@@ -21,6 +32,19 @@ def _build_tree(flat_comments: List[Dict]) -> List[CommentSchema]:
 
 @router.get("/posts/{post_id}/comments", response_model=List[CommentSchema])
 async def list_comments(post_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieves all comments for a specific post, structured as a nested tree.
+
+    Args:
+        post_id: The ID of the post to retrieve comments for.
+        db: The database session dependency.
+
+    Raises:
+        HTTPException: 404 Not Found if the post does not exist.
+
+    Returns:
+        A list of root CommentSchema objects, with nested children.
+    """
     rows = db.query(CommentDB).filter(CommentDB.post_id == post_id).all()
     flat = [
         {"id": c.id, "post_id": c.post_id, "text": c.text, "parent_id": c.parent_id, "author": c.author}
@@ -35,6 +59,22 @@ async def create_comment(
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """
+    Creates a new comment on a specific post.
+
+    Args:
+        post_id: The ID of the post to comment on.
+        comment_in: The comment data (text, optional parent_id).
+        current_user: The username of the authenticated user creating the comment.
+        db: The database session dependency.
+
+    Raises:
+        HTTPException: 404 Not Found if the post does not exist.
+        HTTPException: 400 Bad Request if the parent_id is invalid.
+
+    Returns:
+        The newly created CommentSchema object.
+    """
     pid = comment_in.parent_id if comment_in.parent_id not in (None, 0) else None
 
     if pid is not None:
@@ -61,6 +101,22 @@ async def update_comment(
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """
+    Updates the text of an existing comment.
+
+    Args:
+        comment_id: The ID of the comment to update.
+        comment_in: The updated comment data (text).
+        current_user: The username of the authenticated user.
+        db: The database session dependency.
+
+    Raises:
+        HTTPException: 404 Not Found if the comment does not exist.
+        HTTPException: 403 Forbidden if the user is not the author.
+
+    Returns:
+        The updated CommentSchema object.
+    """
     c = db.query(CommentDB).filter(CommentDB.id == comment_id).first()
     if not c:
         raise HTTPException(status_code=404, detail="Comment not found")
@@ -76,6 +132,21 @@ async def delete_comment(
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """
+    Deletes a comment and all its descendant replies.
+
+    Args:
+        comment_id: The ID of the root comment to delete.
+        current_user: The username of the authenticated user.
+        db: The database session dependency.
+
+    Raises:
+        HTTPException: 404 Not Found if the comment does not exist.
+        HTTPException: 403 Forbidden if the user is not the author.
+
+    Returns:
+        None (Status code 204 indicates success).
+    """
     root = db.query(CommentDB).filter(CommentDB.id == comment_id).first()
     if not root:
         raise HTTPException(status_code=404, detail="Comment not found")

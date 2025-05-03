@@ -60,3 +60,7 @@ More Information is available in `api.md`
 - `POST /comments/posts/{post_id}/comments`: Add a comment to a post
 - `PUT /comments/comments/{comment_id}`: Update a comment
 - `DELETE /comments/comments/{comment_id}`: Delete a comment and its replies
+
+## AI Tools that helped me
+- ChatGPT -> I used ChatGPT for fixing bugs in my code. It also helped my write API documentation and docstrings for functions
+- Github Copilot -> Copilot helped me optimize my code and make it more efficient.
